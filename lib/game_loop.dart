@@ -1,63 +1,57 @@
 import 'dart:ui';
-
-import 'package:box2d_flame/box2d.dart';
-import 'package:flame/flame.dart';
 import 'package:flame/game.dart';
+import 'package:flame/flame.dart';
+import 'package:flame/gestures.dart';
+import 'package:flappybird/Objects/flappy_bird.dart';
+import 'package:flutter/material.dart';
 
-class GameLoop extends Game {
+class GameLoop extends Game with TapDetector {
   Size screenSize;
-
-  static const int WORLD_POOL_SIZE = 100;
-  static const int WORLD_POOL_CONTAINER_SIZE = 10;
-  //Main physic object -> our game world
-  World world;
-  //Zero vector -> no gravity
-  final Vector2 _gravity = Vector2.zero();
-
-  Paint paint;
-//Rectangle based on the size, easy to use
-  Rect _screenRect;
-  final int scale = 5;
+  bool decrease = true;
+  FlappyBird bird;
 
   GameLoop() {
-    world = new World.withPool(
-        _gravity, DefaultWorldPool(WORLD_POOL_SIZE, WORLD_POOL_CONTAINER_SIZE));
-    initialize();
+    intialized();
   }
 
-  Future initialize() async {
-    //Call the resize as soon as flutter is ready
-    resize(await Flame.util.initialDimensions());
+  intialized() {
+    bird = screenSize != null
+        ? FlappyBird(
+            xPosition: (screenSize.width / 2) - 50,
+            yPosition: (screenSize.height / 2) - 50)
+        : null;
   }
 
   @override
   void render(Canvas canvas) {
-    //If no size information -> leave
-    if (screenSize == null) {
-      return;
+    Rect bgRect = Rect.fromLTWH(0, 0, screenSize.width, screenSize.height);
+    Paint bgPaint = Paint();
+    bgPaint.color = Color(0xff008080);
+    canvas.drawRect(bgRect, bgPaint);
+
+    if (bird != null) {
+      bird.render(canvas);
     }
-    //Save the canvas and resize/scale it based on the screenSize
-    canvas.save();
-    canvas.scale(screenSize.width / scale);
-    //Move the canvas 0,0 to the position of the circle we draw
-    canvas.translate(_screenRect.width / 2, _screenRect.height / 2);
-    //Simply draw the circle with a radius of 0.1 using our paint
-    canvas.drawCircle(Offset(0, 0), .1, paint);
-    canvas.restore();
   }
 
   @override
   Future update(double t) async {
-    // TODO: implement update
+    if (bird != null) {
+      bird.update(t);
+    }
   }
 
   @override
   void resize(Size size) {
-    paint = Paint();
-    paint.color = Color(0xffffffff);
-    //Store size and related rectangle
     screenSize = size;
-    _screenRect = Rect.fromLTWH(0, 0, screenSize.width, screenSize.height);
+    intialized();
     super.resize(size);
+  }
+
+  @override
+  void onTapDown(TapDownDetails details) {
+    print(details.globalPosition);
+    bird.jump();
+    super.onTapDown(details);
   }
 }
